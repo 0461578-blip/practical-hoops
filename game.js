@@ -108,7 +108,7 @@ function pass(targetIndex=0,kind='chest'){
  if(!state.playerBall||!mates[targetIndex]){toast('NO TARGET');return}
  const mate=mates[targetIndex],start=handWorld(me,me.userData.ballHand),end=mate.position.clone();end.y=1.2;
  const a=attr(),accuracy=a.pass,bonus=state.badges['Dimer']?state.badges['Dimer']*0.03:0;
- const err=(Math.random()>.05+accuracy/150+bonus)?.7:0;
+ const err=Math.random()>(.05+accuracy/150+bonus)?.7:0;
  if(err)end.x+=(Math.random()-.5)*1.5;
  state.playerBall=false;state.ballFlight={t:0,dur:Math.max(.25,.55-start.distanceTo(end)*.025),start,end,type:'pass',make:true,cpu:false,passTarget:mate};
  addRep(kind==='flashy'?5:3);toast(kind.toUpperCase()+' PASS')
