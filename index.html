@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Practical Hoops — Basketball Prototype</title>
+<style>
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#08090d;color:#fff;font-family:Arial,sans-serif}
+#game{position:fixed;inset:0}canvas{display:block}
+#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#07080cdd,#111827ee);z-index:10}
+.panel{width:min(720px,92vw);padding:32px;border:1px solid #ffffff20;border-radius:24px;background:#10131bd9;box-shadow:0 25px 80px #0008}
+h1{font-size:clamp(38px,8vw,76px);margin:0 0 8px;letter-spacing:-4px}.sub{color:#9ca3af;margin-bottom:25px}
+button{background:#1b1f2a;color:white;border:1px solid #ffffff20;border-radius:12px;padding:13px 18px;font-weight:800;cursor:pointer;margin:5px}
+button:hover{background:#292f3d}.primary{background:#fff;color:#090a0e}.primary:hover{background:#ddd}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.card{padding:15px;border:1px solid #ffffff18;border-radius:14px;background:#ffffff08}
+#hud{display:none;position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:15px;left:50%;transform:translateX(-50%);display:flex;gap:18px;align-items:center;background:#090b10dd;border:1px solid #ffffff1a;border-radius:16px;padding:10px 18px;font-weight:900}.stat{min-width:75px;text-align:center}.label{font-size:10px;color:#8b93a5}.value{font-size:22px}
+#meterWrap{position:absolute;left:50%;bottom:55px;transform:translateX(-50%);width:min(360px,70vw);display:none}.meter{height:18px;background:#252a35;border-radius:10px;border:2px solid #111;overflow:hidden;position:relative}.fill{height:100%;width:0;background:#fff}.greenZone{position:absolute;top:0;bottom:0;left:65%;width:10%;background:#20e070;box-shadow:0 0 16px #20e070}.meterText{text-align:center;font-weight:900;font-size:12px;margin:6px}
+#toast{position:absolute;left:50%;top:28%;transform:translateX(-50%);font-size:32px;font-weight:1000;text-shadow:0 3px 15px #000;opacity:0;transition:.15s}.controls{position:absolute;left:15px;bottom:15px;color:#d1d5db;background:#090b10bb;padding:10px 13px;border-radius:12px;font-size:12px;line-height:1.5}
+#tabHud{display:none;position:absolute;right:18px;top:80px;width:280px;background:#0b0e14ee;border:1px solid #ffffff1c;border-radius:18px;padding:18px}.row{display:flex;justify-content:space-between;margin:9px 0}.bar{height:7px;background:#252a35;border-radius:5px}.bar i{display:block;height:100%;background:#fff;border-radius:5px}
+#mobile{display:none;position:absolute;inset:auto 12px 12px 12px;justify-content:space-between;pointer-events:none}.stick{width:150px;height:150px;position:relative}.mBtn{pointer-events:auto;width:62px;height:62px;border-radius:50%;background:#111827cc;border:1px solid #fff3;color:#fff;font-weight:900;margin:4px}.buttons{display:flex;flex-wrap:wrap;width:220px;justify-content:flex-end}
+@media(max-width:800px){#mobile{display:flex}.controls{display:none}.panel{padding:22px}.grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="menu"><div class="panel">
+<h1>PRACTICAL HOOPS</h1><div class="sub">Original browser basketball prototype • 1v1 Practice</div>
+<button class="primary" id="play">PLAY 1V1</button><button id="build">BUILD CREATOR</button><button id="shot">JUMPSHOT CREATOR</button><button id="park">PARK — COMING SOON</button>
+<div class="grid" style="margin-top:18px"><div class="card"><b>GREEN METER</b><br><small>Time your release.</small></div><div class="card"><b>DUNK METER</b><br><small>Attack the rim.</small></div><div class="card"><b>DRIBBLE</b><br><small>Momentum moves.</small></div></div>
+</div></div>
+<div id="hud"><div class="top"><div class="stat"><div class="label">SCORE</div><div class="value" id="score">0 - 0</div></div><div class="stat"><div class="label">STAMINA</div><div class="value" id="stam">100</div></div><div class="stat"><div class="label">OVR</div><div class="value" id="ovr">85</div></div></div>
+<div id="meterWrap"><div class="meter"><div class="greenZone"></div><div class="fill" id="fill"></div></div><div class="meterText" id="meterText">HOLD E — RELEASE IN GREEN</div></div>
+<div id="toast"></div><div class="controls">WASD move • Shift sprint • E shoot/release • Space dunk • Z crossover • X behind-back • C spin • V stepback • G post • Tab HUD • drag mouse camera</div>
+<div id="tabHud"><b>PLAYER HUD</b><div class="row"><span>Finishing</span><b>90</b></div><div class="bar"><i style="width:90%"></i></div><div class="row"><span>Shooting</span><b>87</b></div><div class="bar"><i style="width:87%"></i></div><div class="row"><span>Handles</span><b>92</b></div><div class="bar"><i style="width:92%"></i></div><div class="row"><span>Defense</span><b>82</b></div><div class="bar"><i style="width:82%"></i></div><hr style="border-color:#ffffff15"><div>Moves: Crossover • Hesi • Spin • Stepback • Post Spin</div></div></div>
+<div id="mobile"><div class="stick"><button class="mBtn" id="up">▲</button><br><button class="mBtn" id="left">◀</button><button class="mBtn" id="down">▼</button><button class="mBtn" id="right">▶</button></div><div class="buttons"><button class="mBtn" id="shoot">SHOOT</button><button class="mBtn" id="dunk">DUNK</button><button class="mBtn" id="move">MOVE</button></div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js';
+
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0c12);
+const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;document.getElementById('game').appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x344054,2));
+const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(5,12,4);sun.castShadow=true;scene.add(sun);
+
+const mat=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.65});
+const court=new THREE.Mesh(new THREE.BoxGeometry(28,.25,16),mat(0x8b5a32));court.position.y=-.15;court.receiveShadow=true;scene.add(court);
+const lineMat=mat(0xffffff);
+function line(x,z,sx,sz){const m=new THREE.Mesh(new THREE.BoxGeometry(sx,.025,sz),lineMat);m.position.set(x,.015,z);scene.add(m)}
+line(0,-8,28,.12);line(0,8,28,.12);line(-14,0,.12,16);line(14,0,.12,16);line(0,0,.08,16);
+const key=new THREE.Mesh(new THREE.BoxGeometry(10,.03,7),mat(0x9b6339));key.position.y=.02;scene.add(key);
+const circle=new THREE.Mesh(new THREE.RingGeometry(2.95,3.05,64),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));circle.rotation.x=-Math.PI/2;circle.position.y=.03;scene.add(circle);
+
+function hoop(z){
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,3.5,16),mat(0x22262e));pole.position.set(0,1.65,z);pole.castShadow=true;scene.add(pole);
+ const board=new THREE.Mesh(new THREE.BoxGeometry(3.2,1.8,.12),mat(0xe7e7e7));board.position.set(0,4.1,z);scene.add(board);
+ const rim=new THREE.Mesh(new THREE.TorusGeometry(.65,.07,12,32),new THREE.MeshStandardMaterial({color:0xff6b00}));rim.rotation.x=Math.PI/2;rim.position.set(0,3.35,z+(z>0?-0.65:0.65));scene.add(rim);
+}
+hoop(7.4);hoop(-7.4);
+
+function player(color=0x1d4ed8){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.CapsuleGeometry(.48,.9,6,12),mat(color));body.position.y=1.15;body.castShadow=true;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.34,16,12),mat(0x8b5a3c));head.position.y=2.05;g.add(head);return g}
+const p=player(0x2563eb);p.position.set(0,0,3);scene.add(p);
+const defender=player(0xef4444);defender.position.set(0,0,-1);scene.add(defender);
+const ball=new THREE.Mesh(new THREE.SphereGeometry(.22,20,16),mat(0xb45309));ball.position.set(.65,1.25,3);ball.castShadow=true;scene.add(ball);
+
+const keys={};let score=0,stamina=100,shooting=false,shotT=0,camYaw=0,camPitch=.25,mouseDown=false,lastX=0,lastY=0,moveName='';
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='Tab'){e.preventDefault();document.getElementById('tabHud').style.display=document.getElementById('tabHud').style.display==='block'?'none':'block'}if(e.key.toLowerCase()==='e'&&!shooting){shooting=true;shotT=0;document.getElementById('meterWrap').style.display='block'}if(e.key.toLowerCase()===' ')tryDunk();if(['z','x','c','v','g'].includes(e.key.toLowerCase()))moveName=e.key.toLowerCase()});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(e.key.toLowerCase()==='e'&&shooting){shooting=false;finishShot()}});
+renderer.domElement.onmousedown=e=>{mouseDown=true;lastX=e.clientX;lastY=e.clientY};addEventListener('mouseup',()=>mouseDown=false);
+addEventListener('mousemove',e=>{if(!mouseDown)return;camYaw-=(e.clientX-lastX)*.006;camPitch=Math.max(-.15,Math.min(.8,camPitch-(e.clientY-lastY)*.004));lastX=e.clientX;lastY=e.clientY});
+
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.opacity=1;setTimeout(()=>el.style.opacity=0,650)}
+function finishShot(){const x=shotT%1;const green=x>.65&&x<.75;document.getElementById('meterWrap').style.display='none';if(green){score+=2;toast('GREEN! +2');}else toast('MISS');document.getElementById('score').textContent=score+' - 0'}
+function tryDunk(){if(p.position.z<-4.7&&stamina>20){toast('DUNK!');score+=2;stamina-=20;document.getElementById('score').textContent=score+' - 0'}else toast('GET TO THE RIM')}
+function update(dt){
+ let v=new THREE.Vector3((keys.d?1:0)-(keys.a?1:0),0,(keys.s?1:0)-(keys.w?1:0));if(v.length())v.normalize();
+ const sprint=keys.shift&&stamina>0;if(sprint){stamina=Math.max(0,stamina-22*dt)}else stamina=Math.min(100,stamina+14*dt);
+ const speed=sprint?7:4.3;p.position.addScaledVector(v,speed*dt);p.position.x=THREE.MathUtils.clamp(p.position.x,-12.5,12.5);p.position.z=THREE.MathUtils.clamp(p.position.z,-6.5,6.5);
+ if(v.length()){p.rotation.y=Math.atan2(v.x,v.z);moveName=''} 
+ if(moveName){toast(moveName==='z'?'CROSSOVER':moveName==='x'?'BEHIND BACK':moveName==='c'?'SPIN':moveName==='v'?'STEPBACK':'POST MOVE');moveName=''}
+ ball.position.lerp(new THREE.Vector3(p.position.x+.62,p.position.y+1.15,p.position.z),.25);
+ if(shooting){shotT+=dt;const prog=shotT%1;document.getElementById('fill').style.width=(prog*100)+'%';}
+ const target=new THREE.Vector3(p.position.x+Math.sin(camYaw)*7,3.5+camPitch*4,p.position.z+Math.cos(camYaw)*7);camera.position.lerp(target,.12);camera.lookAt(p.position.x,1.2,p.position.z);
+ document.getElementById('stam').textContent=Math.round(stamina);
+}
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);renderer.render(scene,camera);requestAnimationFrame(loop)}requestAnimationFrame(loop);
+document.getElementById('play').onclick=()=>document.getElementById('menu').style.display='none';
+document.getElementById('build').onclick=()=>toast('BUILD CREATOR — coming next');
+document.getElementById('shot').onclick=()=>toast('JUMPSHOT CREATOR — coming next');
+document.getElementById('park').onclick=()=>toast('PARK — COMING SOON');
+document.getElementById('shoot').onclick=()=>{if(!shooting){shooting=true;shotT=0;document.getElementById('meterWrap').style.display='block'}else{shooting=false;finishShot()}};
+document.getElementById('dunk').onclick=tryDunk;
+['up','down','left','right'].forEach(id=>document.getElementById(id).onpointerdown=()=>keys[id==='up'?'w':id==='down'?'s':id==='left'?'a':'d']=true);
+['up','down','left','right'].forEach(id=>document.getElementById(id).onpointerup=()=>keys[id==='up'?'w':id==='down'?'s':id==='left'?'a':'d']=false);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
