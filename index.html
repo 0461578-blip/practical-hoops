@@ -49,7 +49,7 @@ function handWorld(g,side='right'){let s=side==='right'||side==='left'?side:g.us
 const me=avatar(0x2563eb);me.position.set(0,0,3);S.add(me);const ball=new THREE.Mesh(new THREE.SphereGeometry(.22,20,16),mat(0xb45309));ball.castShadow=true;S.add(ball);
 let moveInput=new THREE.Vector3(), dribbleClock=0;
 let enemies=[],mates=[],mode=1,score=0,opp=0,stam=100,keys={},action=null,actionStart=0,camYaw=0,camPitch=.25,drag=false,lx=0,ly=0,ballFlight=null,cpuBall=false,cpuShotTimer=0,cpuCooldown=0,build={pos:'PG',height:6.2,take:'Shot Creator'},shot={speed:65,window:12},meterStyle='bar';
-function resetTeams(){[...enemies,...mates].forEach(x=>S.remove(x));enemies=[];mates=[];let n=mode===1?1:mode===2?2:3;for(let i=0;i<n;i++){let e=avatar(0xef4444);e.position.set((i-(n-1)/2)*3,-1-i*.5,-1);S.add(e);enemies.push(e)}for(let i=0;i<mode-1;i++){let m=avatar(0x2563eb);m.position.set((i-(mode-2)/2)*3,0,1+i);S.add(m);mates.push(m)}}resetTeams();
+function resetTeams(){[...enemies,...mates].forEach(x=>S.remove(x));enemies=[];mates=[];playerBall=true;cpuBall=false;ballFlight=null;let n=mode===1?1:mode===2?2:3;for(let i=0;i<n;i++){let e=avatar(0xef4444);e.position.set((i-(n-1)/2)*3,-1-i*.5,-1);S.add(e);enemies.push(e)}for(let i=0;i<mode-1;i++){let m=avatar(0x2563eb);m.position.set((i-(mode-2)/2)*3,0,1+i);S.add(m);mates.push(m)}}resetTeams();
 function toast(t){let e=document.getElementById('toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,700)}
 function applyMeterStyle(){let m=document.getElementById('meter');m.classList.remove('meter-funnel','meter-arrow');if(meterStyle==='funnel')m.classList.add('meter-funnel');if(meterStyle==='arrow')m.classList.add('meter-arrow')}function meter(type){
   if(action||ballFlight||cpuBall)return;
@@ -180,7 +180,7 @@ function ai(dt){
     if(mode===1){
       if(!cpuBall&&!ballFlight){
         if(dist>1.25)e.position.addScaledVector(dvec.normalize(),dt*2.35);
-        else if(Math.random()<dt*.42){cpuBall=true;toast('CPU HAS BALL')}
+        else if(Math.random()<dt*.42){cpuBall=true;playerBall=false;cpuShotTimer=0;toast('CPU HAS BALL')}
       }else if(cpuBall){
         if(dist<2.0)e.position.x+=(Math.random()-.5)*dt*1.8;
         else if(dist>3.2)e.position.addScaledVector(dvec.normalize(),dt*1.15);
